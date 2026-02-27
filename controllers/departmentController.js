@@ -1,15 +1,17 @@
 const Department = require('../models/Department');
 const Employee = require("../models/Employee");
+const departmentService = require("../services/departmentService");
+const employeeService = require("../services/employeeService");
 
 // Get all departments
 exports.getAllDepartments = async (req, res) => {
     try {
-        const departments = await Department.find().sort({ name: 1 });
-        res.json({
-            success: true,
-            count: departments.length,
-            data: departments
-        });
+        const result = await departmentService.getAllDepartments();
+        if (result.success) {
+            return res.json(result);
+        }
+
+        return res.status(400).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -22,17 +24,11 @@ exports.getAllDepartments = async (req, res) => {
 // Get single department
 exports.getDepartmentById = async (req, res) => {
     try {
-        const department = await Department.findById(req.params.id);
-        if (!department) {
-            return res.status(404).json({
-                success: false,
-                message: 'Department not found'
-            });
+        const result = await departmentService.getDepartmentById(req.params.id);
+        if (result.success) {
+            return res.json(result);
         }
-        res.json({
-            success: true,
-            data: department
-        });
+        return res.status(400).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -45,28 +41,13 @@ exports.getDepartmentById = async (req, res) => {
 // Create department
 exports.createDepartment = async (req, res) => {
     try {
-        const { name, description } = req.body;
+        const result = await departmentService.createDepartment(req.body);
 
-        // Check if department already exists
-        const existingDepartment = await Department.findOne({ name });
-        if (existingDepartment) {
-            return res.status(400).json({
-                success: false,
-                message: 'Department already exists'
-            });
+        if (result.success) {
+            return res.status(201).json(result);
         }
 
-        const department = new Department({
-            name,
-            description
-        });
-
-        await department.save();
-        res.status(201).json({
-            success: true,
-            message: 'Department created successfully',
-            data: department
-        });
+        return res.status(400).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -79,24 +60,14 @@ exports.createDepartment = async (req, res) => {
 // Update department
 exports.updateDepartment = async (req, res) => {
     try {
-        const department = await Department.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        const {id} = req.params;
+        const result = await departmentService.updateDepartment(id, req.body);
 
-        if (!department) {
-            return res.status(404).json({
-                success: false,
-                message: 'Department not found'
-            });
+        if (result.success) {
+            return res.json(result);
         }
 
-        res.json({
-            success: true,
-            message: 'Department updated successfully',
-            data: department
-        });
+        return res.status(404).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -109,31 +80,14 @@ exports.updateDepartment = async (req, res) => {
 // Delete department
 exports.deleteDepartment = async (req, res) => {
     try {
-        const department = await Department.findById(req.params.id);
+        const {id} = req.params;
+        const result = await departmentService.deleteDepartment(id);
 
-        if (!department) {
-            return res.status(404).json({
-                success: false,
-                message: 'Department not found'
-            });
+        if (result.success) {
+            return res.json(result);
         }
 
-        // Check if department has employees
-        const Employee = require('../models/Employee');
-        const employeesInDepartment = await Employee.countDocuments({ department: req.params.id });
-
-        if (employeesInDepartment > 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Cannot delete department with assigned employees'
-            });
-        }
-
-        await department.deleteOne();
-        res.json({
-            success: true,
-            message: 'Department deleted successfully'
-        });
+        return res.status(404).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -146,15 +100,13 @@ exports.deleteDepartment = async (req, res) => {
 // Get employees by department
 exports.getDepartmentEmployees = async (req, res) => {
     try {
-        const Employee = require('../models/Employee');
-        const employees = await Employee.find({ department: req.params.id })
-            .populate('department', 'name');
 
-        res.json({
-            success: true,
-            count: employees.length,
-            data: employees
-        });
+        const result = await departmentService.getDepartmentEmployees(req.params.id);
+        if (result.success) {
+            return res.json(result);
+        }
+
+        return res.status(404).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,

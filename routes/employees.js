@@ -5,6 +5,12 @@ const employeeController = require('../controllers/employeeController');
 // GET all employees
 router.get('/', employeeController.getAllEmployees);
 
+//SEARCH employee by Name
+router.get('/search', employeeController.searchEmployees);
+
+// GET employees by department
+router.get('/department/:departmentId', employeeController.getEmployeesByDepartment);
+
 // GET single employee
 router.get('/:id', employeeController.getEmployeeById);
 
@@ -16,8 +22,5 @@ router.put('/:id', employeeController.updateEmployee);
 
 // DELETE employee
 router.delete('/:id', employeeController.deleteEmployee);
-
-// GET employees by department
-router.get('/department/:departmentId', employeeController.getEmployeesByDepartment);
 
 module.exports = router;

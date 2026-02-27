@@ -1,18 +1,18 @@
-const Employee = require('../models/Employee');
-const Department = require('../models/Department');
+const employeeService = require('../services/employeeService');
 
-// Get all employees
+/**
+ * GET /api/employees
+ * Get all employees
+ */
 exports.getAllEmployees = async (req, res) => {
     try {
-        const employees = await Employee.find()
-            .populate('department', 'name')
-            .sort({ lastName: 1, firstName: 1 });
+        const result = await employeeService.getAllEmployees();
 
-        res.json({
-            success: true,
-            count: employees.length,
-            data: employees
-        });
+        if (result.success) {
+            return res.json(result);
+        }
+
+        return res.status(400).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -22,23 +22,22 @@ exports.getAllEmployees = async (req, res) => {
     }
 };
 
-// Get single employee
+
+/**
+ * GET /api/employees/:id
+ * Get employee by ID
+ */
 exports.getEmployeeById = async (req, res) => {
     try {
-        const employee = await Employee.findById(req.params.id)
-            .populate('department', 'name');
+        const {id} = req.params;
 
-        if (!employee) {
-            return res.status(404).json({
-                success: false,
-                message: 'Employee not found'
-            });
+        const result = await employeeService.getEmployeeById(id);
+
+        if (result.success) {
+            return res.json(result);
         }
 
-        res.json({
-            success: true,
-            data: employee
-        });
+        return res.status(404).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -48,46 +47,21 @@ exports.getEmployeeById = async (req, res) => {
     }
 };
 
-// Create employee
+
+/**
+ * POST /api/employees
+ * Create new employee
+ */
 exports.createEmployee = async (req, res) => {
     try {
-        const { firstName, lastName, department, email, phone } = req.body;
+        const result = await employeeService.createEmployee(req.body);
 
-        // Validate required fields
-        if (!firstName || !lastName || !department) {
-            return res.status(400).json({
-                success: false,
-                message: 'First name, last name, and department are required'
-            });
+        if (result.success) {
+            return res.status(201).json(result);
         }
 
-        // Check if department exists
-        const departmentExists = await Department.findById(department);
-        if (!departmentExists) {
-            return res.status(400).json({
-                success: false,
-                message: 'Department not found'
-            });
-        }
+        return res.status(400).json(result);
 
-        const employee = new Employee({
-            firstName,
-            lastName,
-            department,
-            email,
-            phone
-        });
-
-        await employee.save();
-
-        const populatedEmployee = await Employee.findById(employee._id)
-            .populate('department', 'name');
-
-        res.status(201).json({
-            success: true,
-            message: 'Employee created successfully',
-            data: populatedEmployee
-        });
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -97,38 +71,21 @@ exports.createEmployee = async (req, res) => {
     }
 };
 
-// Update employee
+
+/**
+ * PUT /api/employees/:id
+ * Update employee
+ */
 exports.updateEmployee = async (req, res) => {
     try {
-        // If department is being updated, verify it exists
-        if (req.body.department) {
-            const departmentExists = await Department.findById(req.body.department);
-            if (!departmentExists) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Department not found'
-                });
-            }
+        const {id} = req.params;
+        const result = await employeeService.updateEmployee(id, req.body);
+
+        if (result.success) {
+            return res.json(result);
         }
 
-        const employee = await Employee.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        ).populate('department', 'name');
-
-        if (!employee) {
-            return res.status(404).json({
-                success: false,
-                message: 'Employee not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Employee updated successfully',
-            data: employee
-        });
+        return res.status(404).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -138,22 +95,21 @@ exports.updateEmployee = async (req, res) => {
     }
 };
 
-// Delete employee
+
+/**
+ * DELETE /api/employees/:id
+ * Delete employee
+ */
 exports.deleteEmployee = async (req, res) => {
     try {
-        const employee = await Employee.findByIdAndDelete(req.params.id);
+        const {id} = req.params;
+        const result = await employeeService.deleteEmployee(id);
 
-        if (!employee) {
-            return res.status(404).json({
-                success: false,
-                message: 'Employee not found'
-            });
+        if (result.success) {
+            return res.json(result);
         }
 
-        res.json({
-            success: true,
-            message: 'Employee deleted successfully'
-        });
+        return res.status(404).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -163,24 +119,51 @@ exports.deleteEmployee = async (req, res) => {
     }
 };
 
-// Get employees by department
+/**
+ * GET /api/employees/department/:departmentId
+ * Get employees by department
+ */
 exports.getEmployeesByDepartment = async (req, res) => {
     try {
-        const { departmentId } = req.params;
+        const {departmentId} = req.params;
 
-        const employees = await Employee.find({ department: departmentId })
-            .populate('department', 'name')
-            .sort({ lastName: 1, firstName: 1 });
+        const result = await employeeService.getEmployeesByDepartment(departmentId);
 
-        res.json({
-            success: true,
-            count: employees.length,
-            data: employees
-        });
+        if (result.success) {
+            return res.json(result);
+        }
+
+        return res.status(404).json(result);
     } catch (error) {
         res.status(500).json({
             success: false,
             message: 'Error fetching employees by department',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * GET /api/employees/search?q=term
+ * Search employees
+ */
+exports.searchEmployees = async (req, res) => {
+    try {
+        const {q} = req.query;
+
+        if (!q) {
+            return res.status(400).json({
+                success: false,
+                message: 'Search term is required'
+            });
+        }
+
+        const result = await employeeService.searchEmployees(q);
+        return res.json(result);
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
             error: error.message
         });
     }
