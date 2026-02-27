@@ -1,5 +1,5 @@
 const express = require('express');
-
+const path = require('path');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 5050;
@@ -18,22 +18,30 @@ app.use(express.urlencoded({extended: true}));
 app.use('/api/departments', departmentRoutes);
 app.use('/api/employees', employeeRoutes);
 
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve index.html for the root route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Also handle direct routes for SPA-like navigation
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/employees', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/departments', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 connectDb().then(r => console.log("Connected to the database..."));
 //seedDatabase();
 
-// Root route
-app.get('/', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Welcome to Dental Practice Employee Management API',
-        endpoints: {
-            departments: '/api/departments',
-            employees: '/api/employees',
-            health: '/api/health'
-        }
-    });
-});
 
 
 // Health check route
