@@ -1,0 +1,23 @@
+const express = require('express');
+const router = express.Router();
+const employeeController = require('../controllers/employeeController');
+
+// GET all employees
+router.get('/', employeeController.getAllEmployees);
+
+// GET single employee
+router.get('/:id', employeeController.getEmployeeById);
+
+// POST create employee
+router.post('/', employeeController.createEmployee);
+
+// PUT update employee
+router.put('/:id', employeeController.updateEmployee);
+
+// DELETE employee
+router.delete('/:id', employeeController.deleteEmployee);
+
+// GET employees by department
+router.get('/department/:departmentId', employeeController.getEmployeesByDepartment);
+
+module.exports = router;

@@ -1,0 +1,24 @@
+services:
+  # The MongoDB Database
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+
+  # The Node.js Application
+  app:
+    build: .
+    ports:
+      - "5050:5050"
+    environment:
+      - DB_URL=mongodb://admin:password@localhost:27017/admin?authSource=admin
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo-data:
